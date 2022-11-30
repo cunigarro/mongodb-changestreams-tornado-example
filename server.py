@@ -1,4 +1,3 @@
-import os
 import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
@@ -6,7 +5,10 @@ import tornado.web
 from motor.motor_tornado import MotorClient
 from bson import json_util
 from logzero import logger
+from dotenv import load_dotenv
+from os import environ
 
+load_dotenv()
 
 class WebpageHandler(tornado.web.RequestHandler):
     def get(self):
@@ -34,7 +36,7 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
     @classmethod
     def on_change(cls, change):
         logger.debug(change)
-        message = f"{change['operationType']}: {change['fullDocument']['name']}"
+        message = f"{change['operationType']}: {change['fullDocument']}"
         ChangesHandler.send_updates(message)
 
 
@@ -50,8 +52,8 @@ async def watch(collection):
 
 
 def main():
-    client = MotorClient(os.environ["MONGO_SRV"])
-    collection = client["sample_airbnb"]["listingsAndReviews"]
+    client = MotorClient(environ.get('MONGO_SRV'))
+    collection = client["admin-founders"]["credit_request"]
 
     app = tornado.web.Application(
         [(r"/socket", ChangesHandler), (r"/", WebpageHandler)]
